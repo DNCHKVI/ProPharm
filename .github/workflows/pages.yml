@@ -25,29 +25,43 @@ jobs:
 
     steps:
       - name: Get repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-            - name: Unpack latest ProPharm
+      - name: Unpack latest ProPharm
+        shell: bash
         run: |
-          rm -rf site
-          mkdir site
-          rm -rf /tmp/propharm
-          mkdir /tmp/propharm
+          set -e
 
-          ZIP_FILE=$(ls PharmExam170_PWA_v*.zip | sort -V | tail -n 1)
+          rm -rf site
+          rm -rf /tmp/propharm
+
+          mkdir -p site
+          mkdir -p /tmp/propharm
+
+          ZIP_FILE=$(find . -maxdepth 1 -type f -name 'PharmExam170_PWA_v*.zip' -printf '%f\n' | sort -V | tail -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: PharmExam ZIP not found"
+            exit 1
+          fi
+
           FOLDER_NAME="${ZIP_FILE%.zip}"
 
-          echo "Using: $ZIP_FILE"
-          echo "Folder: $FOLDER_NAME"
+          echo "Using ZIP: $ZIP_FILE"
+          echo "Expected folder: $FOLDER_NAME"
 
           unzip -q "$ZIP_FILE" -d /tmp/propharm
 
+          echo "Extracted files:"
+          find /tmp/propharm -maxdepth 2 -type f | sort | head -100
+
           cp -R "/tmp/propharm/$FOLDER_NAME/." site/
 
-          echo "Published files:"
+          echo "Site files:"
           find site -maxdepth 2 -type f | sort | head -100
 
           test -f site/index.html
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
