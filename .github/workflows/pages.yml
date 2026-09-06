@@ -34,9 +34,9 @@ jobs:
           rm -rf /tmp/propharm
           mkdir /tmp/propharm
 
-          unzip -q PharmExam170_PWA_v0_1.zip -d /tmp/propharm
+          unzip -q PharmExam170_PWA_v0_2.zip -d /tmp/propharm
 
-          cp -R /tmp/propharm/PharmExam170_PWA_v0_1/. site/
+          cp -R /tmp/propharm/PharmExam170_PWA_v0_2/. site/
 
           echo "Published files:"
           find site -maxdepth 2 -type f | sort | head -100
