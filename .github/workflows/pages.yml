@@ -2,8 +2,7 @@ name: Deploy ProPharm
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -20,56 +19,35 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     runs-on: ubuntu-latest
-
     steps:
       - name: Get repository
         uses: actions/checkout@v4
 
-      - name: Unpack latest ProPharm
+      # Install matching server-bundle in Supabase before publishing this version.
+      - name: Unpack public release
         shell: bash
         run: |
-          set -e
-
+          set -euo pipefail
+          ZIP_FILE="ProPharm_v0.28.1_GITHUB_PAGES.zip"
+          test -f "$ZIP_FILE" || { echo "Upload $ZIP_FILE to the repository root first"; exit 1; }
           rm -rf site
-          rm -rf /tmp/propharm
-
-          mkdir -p site
-          mkdir -p /tmp/propharm
-
-          ZIP_FILE=$(find . -maxdepth 1 -type f -name 'PharmExam170_PWA_v*.zip' -printf '%f\n' | sort -V | tail -n 1)
-
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: PharmExam ZIP not found"
-            exit 1
-          fi
-
-          FOLDER_NAME="${ZIP_FILE%.zip}"
-
-          echo "Using ZIP: $ZIP_FILE"
-          echo "Expected folder: $FOLDER_NAME"
-
-          unzip -q "$ZIP_FILE" -d /tmp/propharm
-
-          echo "Extracted files:"
-          find /tmp/propharm -maxdepth 2 -type f | sort | head -100
-
-          cp -R "/tmp/propharm/$FOLDER_NAME/." site/
-
-          echo "Site files:"
-          find site -maxdepth 2 -type f | sort | head -100
-
+          mkdir site
+          unzip -q "$ZIP_FILE" -d site
           test -f site/index.html
+          test -f site/src/core/build.js
+          test -f site/asset-manifest.json
+          test ! -d site/server-bundle
+          test ! -d site/content
+          test ! -d site/supabase
+          echo "Publishing $ZIP_FILE"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
           path: site
-
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v4
