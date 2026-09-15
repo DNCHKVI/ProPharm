@@ -24,12 +24,11 @@ jobs:
       - name: Get repository
         uses: actions/checkout@v4
 
-      # Install matching server-bundle in Supabase before publishing this version.
       - name: Unpack public release
         shell: bash
         run: |
           set -euo pipefail
-          ZIP_FILE="ProPharm_v0.28.1_GITHUB_PAGES.zip"
+          ZIP_FILE="ProPharm_v0.28.3_GITHUB_PAGES.zip"
           test -f "$ZIP_FILE" || { echo "Upload $ZIP_FILE to the repository root first"; exit 1; }
           rm -rf site
           mkdir site
