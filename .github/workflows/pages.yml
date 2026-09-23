@@ -20,29 +20,36 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+
       - name: Unpack release
         run: |
-          test -f ProPharm_0.28.6_UPDATE.zip
+          test -f ProPharm_0.28.8_UPDATE.zip
           mkdir release
-          unzip -q ProPharm_0.28.6_UPDATE.zip -d release
+          unzip -q ProPharm_0.28.8_UPDATE.zip -d release
           test -f release/site/index.html
           test ! -d release/site/server-bundle
           test ! -d release/site/content
           test ! -d release/site/supabase
+
       - name: Import and verify private content
         env:
           PROPHARM_PACKAGE_KEY: ${{ secrets.PROPHARM_PACKAGE_KEY }}
           PROPHARM_SERVICE_ROLE_KEY: ${{ secrets.PROPHARM_SERVICE_ROLE_KEY }}
         run: node release/deploy-ipad.mjs
+
       - uses: actions/configure-pages@v5
+
       - uses: actions/upload-pages-artifact@v4
         with:
           path: release/site
+
       - name: Publish verified release
         id: deployment
         uses: actions/deploy-pages@v4
