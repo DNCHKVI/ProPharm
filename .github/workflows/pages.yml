@@ -1,8 +1,6 @@
-name: Deploy ProPharm
+name: Update ProPharm from iPad
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,41 +10,39 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Get repository
-        uses: actions/checkout@v4
-
-      - name: Unpack public release
-        shell: bash
-        run: |
-          set -euo pipefail
-          ZIP_FILE="ProPharm_v0.28.3_GITHUB_PAGES.zip"
-          test -f "$ZIP_FILE" || { echo "Upload $ZIP_FILE to the repository root first"; exit 1; }
-          rm -rf site
-          mkdir site
-          unzip -q "$ZIP_FILE" -d site
-          test -f site/index.html
-          test -f site/src/core/build.js
-          test -f site/asset-manifest.json
-          test ! -d site/server-bundle
-          test ! -d site/content
-          test ! -d site/supabase
-          echo "Publishing $ZIP_FILE"
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          path: site
-      - name: Deploy site
+          node-version: '22'
+      - name: Unpack release
+        run: |
+          test -f ProPharm_0.28.6_UPDATE.zip
+          mkdir release
+          unzip -q ProPharm_0.28.6_UPDATE.zip -d release
+          test -f release/site/index.html
+          test ! -d release/site/server-bundle
+          test ! -d release/site/content
+          test ! -d release/site/supabase
+      - name: Import and verify private content
+        env:
+          PROPHARM_PACKAGE_KEY: ${{ secrets.PROPHARM_PACKAGE_KEY }}
+          PROPHARM_SERVICE_ROLE_KEY: ${{ secrets.PROPHARM_SERVICE_ROLE_KEY }}
+        run: node release/deploy-ipad.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: release/site
+      - name: Publish verified release
         id: deployment
         uses: actions/deploy-pages@v4
